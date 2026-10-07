@@ -1,0 +1,37 @@
+# Checks that run on the developer's machine before code reaches the repository. The pipeline runs them again:
+# these only shorten the loop.
+pre-commit:
+  parallel: true
+  commands:
+    secrets:
+      run: |
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks git --pre-commit --staged --redact --no-banner
+        else
+          echo "gitleaks is not installed: secrets are only scanned by the pipeline (brew install gitleaks)"
+        fi
+    solidity-format:
+      root: contracts/
+      glob: '*.sol'
+      run: forge fmt --check {staged_files}
+    solidity-lint:
+      root: contracts/
+      glob: '*.sol'
+      run: npx solhint --max-warnings 0 {staged_files}
+    web-lint:
+      root: web/
+      glob: '*.{ts,tsx}'
+      run: npx eslint --max-warnings 0 --no-warn-ignored {staged_files}
+    format:
+      glob: '*.{ts,tsx,js,mjs,json,css,html,md,yml,yaml}'
+      run: npx prettier --check --ignore-unknown {staged_files}
+    generated:
+      glob: 'contracts/src/*.sol'
+      run: npm run abi:check && npm run storage:check
+
+pre-push:
+  commands:
+    contracts:
+      run: npm run test:contracts
+    web:
+      run: npm test -w web

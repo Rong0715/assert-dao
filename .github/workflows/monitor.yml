@@ -1,0 +1,48 @@
+# Operate: every hour, compare the chain with the repository and report what happened on the DAO.
+# A failed run means the chain and the repository disagree: an upgrade or a new head that main does not know of.
+name: Monitor
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    name: Monitor
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          foundry: 'false'
+
+      # The last block seen travels from run to run in the cache: each run saves under a new key and the next
+      # one restores the most recent.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .monitor
+          key: monitor-cursor-${{ github.run_id }}
+          restore-keys: monitor-cursor-
+
+      - name: Watch
+        env:
+          BASE_RPC_URL: ${{ secrets.BASE_RPC_URL }}
+          BASE_SEPOLIA_RPC_URL: ${{ secrets.BASE_SEPOLIA_RPC_URL }}
+          MONITOR_WEBHOOK_URL: ${{ secrets.MONITOR_WEBHOOK_URL }}
+        run: npm run monitor -- --cursor .monitor/cursor.json
+
+      - if: always() && hashFiles('.monitor/cursor.json') != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .monitor
+          key: monitor-cursor-${{ github.run_id }}

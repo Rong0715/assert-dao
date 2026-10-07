@@ -1,0 +1,25 @@
+name: Set up the toolchain
+description: Node and Foundry at the versions the project is developed with, and the dependencies of the lockfile.
+
+inputs:
+  foundry:
+    description: Install Foundry
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+
+    - if: inputs.foundry == 'true'
+      uses: foundry-rs/foundry-toolchain@908c540300062bd5a7e473851cdb4282204cee09 # v1.9.1
+      with:
+        # The version the project is developed with: formatting, linting and gas figures depend on it.
+        version: v1.5.0
+
+    # Exactly the lockfile, and no install script but the ones approved in package.json.
+    - run: npm ci
+      shell: bash

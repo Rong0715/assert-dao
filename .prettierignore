@@ -1,0 +1,16 @@
+node_modules
+dist
+coverage
+contracts/lib
+contracts/out
+contracts/cache
+contracts/docs
+contracts/broadcast
+contracts/snapshots
+contracts/storage
+contracts/deployments
+contracts/src
+contracts/script
+contracts/test
+contracts/foundry.lock
+package-lock.json

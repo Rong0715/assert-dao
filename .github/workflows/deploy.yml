@@ -1,0 +1,170 @@
+# Continuous delivery: a published release is deployed to staging (Base Sepolia) by the release workflow, and to
+# production (Base) by hand, behind the approval of the `production` environment.
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      tag:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Where to deploy
+        type: choice
+        options: [staging, production]
+        default: staging
+      tag:
+        description: Release to deploy, such as v1.0.0
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy · ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    # Secrets come from the environment. Production also waits here for its reviewers.
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      TAG: ${{ inputs.tag }}
+      ENVIRONMENT: ${{ inputs.environment }}
+      CHAIN_ID: ${{ inputs.environment == 'production' && '8453' || '84532' }}
+      RPC_URL: ${{ secrets.RPC_URL }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+          submodules: true
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+
+      # The code is the release. What runs where, and who the head is, is what main says today.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          path: .main
+          sparse-checkout: |
+            contracts/deployments
+            contracts/config
+          persist-credentials: false
+      - name: Take records and configuration from main
+        id: main
+        run: |
+          cp -R .main/contracts/deployments/. contracts/deployments/
+          cp -R .main/contracts/config/. contracts/config/
+          echo "sha=$(git -C .main rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: The build reproduces the release
+        run: |
+          gh release download "$TAG" --pattern AssertDAO.bin --dir "$RUNNER_TEMP"
+          npm run build:contracts
+          built=$(jq -r .bytecode.object contracts/out/AssertDAO.sol/AssertDAO.json)
+          if [ "$built" != "$(cat "$RUNNER_TEMP/AssertDAO.bin")" ]; then
+            echo "::error::This build does not reproduce the bytecode published with $TAG."
+            exit 1
+          fi
+
+      - name: Rehearse the upgrade on a fork of the chain
+        if: hashFiles(format('contracts/deployments/{0}.json', env.CHAIN_ID)) != ''
+        working-directory: contracts
+        env:
+          REHEARSAL_RPC_URL: ${{ secrets.RPC_URL }}
+        run: forge test --match-contract UpgradeRehearsal -vvv
+
+      # The key of the deployer pays for gas and holds no role: the head is named in contracts/config.
+      - name: Deploy, or upgrade what is deployed
+        id: broadcast
+        working-directory: contracts
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+        run: |
+          if [ -f "deployments/$CHAIN_ID.json" ]; then script=Upgrade; else script=Deploy; fi
+          echo "script=$script" >> "$GITHUB_OUTPUT"
+          forge script "script/$script.s.sol" --rpc-url "$RPC_URL" --private-key "$DEPLOYER_PRIVATE_KEY" --broadcast --slow \
+            | tee "$RUNNER_TEMP/broadcast.log"
+          {
+            echo "### $script of $TAG on chain $CHAIN_ID"
+            echo '```json'
+            cat "deployments/$CHAIN_ID.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if grep -q 'Upgrade pending' "$RUNNER_TEMP/broadcast.log"; then
+            echo "pending=true" >> "$GITHUB_OUTPUT"
+            {
+              echo '### The head has to finish the upgrade'
+              echo '```'
+              grep -A 3 'Upgrade pending' "$RUNNER_TEMP/broadcast.log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: broadcast-${{ inputs.environment }}
+          path: contracts/broadcast/**/run-latest.json
+          if-no-files-found: error
+
+      # The record reaches main through a pull request, like any other change.
+      - name: Propose the record to main
+        env:
+          MAIN_SHA: ${{ steps.main.outputs.sha }}
+        run: |
+          branch="deploy/$ENVIRONMENT-$TAG-$GITHUB_RUN_ID"
+          path="contracts/deployments/$CHAIN_ID.json"
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/heads/$branch" -f "sha=$MAIN_SHA"
+          current=$(gh api "repos/$GITHUB_REPOSITORY/contents/$path?ref=$branch" --jq .sha 2>/dev/null || true)
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/$path" \
+            -f "message=Record $TAG on $ENVIRONMENT" \
+            -f "branch=$branch" \
+            -f "content=$(base64 -w0 "$path")" \
+            ${current:+-f "sha=$current"}
+          gh pr create --base main --head "$branch" \
+            --title "Record $TAG on $ENVIRONMENT" \
+            --body "Written by the Deploy workflow, run $GITHUB_RUN_ID: what now runs on chain $CHAIN_ID."
+          gh workflow run ci.yml --ref "$branch"
+
+      # ── Operate ───────────────────────────────────────────────────────────────────────────────────────────
+
+      - name: Publish the source of what was deployed
+        working-directory: contracts
+        env:
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          SCRIPT: ${{ steps.broadcast.outputs.script }}
+        run: |
+          implementation=$(jq -r .implementation "deployments/$CHAIN_ID.json")
+          proxy=$(jq -r .proxy "deployments/$CHAIN_ID.json")
+          verify() {
+            forge verify-contract "$@" --chain "$CHAIN_ID" --rpc-url "$RPC_URL" --watch --verifier sourcify
+            if [ -n "$ETHERSCAN_API_KEY" ]; then
+              forge verify-contract "$@" --chain "$CHAIN_ID" --rpc-url "$RPC_URL" --watch \
+                --verifier etherscan --etherscan-api-key "$ETHERSCAN_API_KEY"
+            fi
+          }
+          verify "$implementation" src/AssertDAO.sol:AssertDAO
+          if [ "$SCRIPT" = Deploy ]; then
+            verify "$proxy" lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol:ERC1967Proxy \
+              --guess-constructor-args
+          fi
+
+      - name: The chain agrees with the record
+        if: steps.broadcast.outputs.pending != 'true'
+        env:
+          BASE_RPC_URL: ${{ secrets.RPC_URL }}
+          BASE_SEPOLIA_RPC_URL: ${{ secrets.RPC_URL }}
+        run: node ops/monitor.mjs --chain "$CHAIN_ID" --check

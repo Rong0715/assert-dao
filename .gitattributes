@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+# Generated files: collapsed in reviews, still diffed when they change.
+web/src/abi/AssertDAO.ts linguist-generated=true
+contracts/storage/*.json linguist-generated=true
+contracts/snapshots/*.json linguist-generated=true
+package-lock.json linguist-generated=true

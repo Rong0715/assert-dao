@@ -1,0 +1,53 @@
+{
+  "name": "assert-dao",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Quadratic voting for the members of the ASSERT Association",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "web"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build:contracts && npm run build -w web",
+    "build:contracts": "cd contracts && forge build",
+    "docs": "cd contracts && forge doc",
+    "abi": "node scripts/abi.mjs",
+    "abi:check": "node scripts/abi.mjs --check",
+    "storage": "node scripts/storage-layout.mjs",
+    "storage:check": "node scripts/storage-layout.mjs --check",
+    "upgrade:check": "node scripts/upgrade-safety.mjs",
+    "lint": "npm run lint:contracts && npm run lint -w web && npm run typecheck -w web && npm run format:check",
+    "lint:contracts": "cd contracts && forge fmt --check && forge lint --deny notes && solhint --max-warnings 0 'src/**/*.sol' 'script/**/*.sol' 'test/**/*.sol'",
+    "format": "prettier --write . && cd contracts && forge fmt",
+    "format:check": "prettier --check .",
+    "test": "npm run test:contracts && npm test -w web && npm run test:integration -w web",
+    "test:contracts": "cd contracts && forge test",
+    "test:integration": "npm run test:integration -w web",
+    "coverage": "node scripts/coverage.mjs --lines 100 --branches 100",
+    "gas": "cd contracts && forge test --match-contract GasTest",
+    "gas:check": "cd contracts && FORGE_SNAPSHOT_CHECK=true forge test --match-contract GasTest",
+    "analyze": "cd contracts && uvx --from slither-analyzer==0.11.6 slither .",
+    "mutate": "cd contracts && uvx --from slither-analyzer==0.11.6 slither-mutate src/AssertDAO.sol --contract-names AssertDAO --timeout 180 --test-cmd 'forge test --no-match-path \"test/fork/*\" --no-match-contract GasTest'",
+    "package": "node scripts/package.mjs",
+    "monitor": "node ops/monitor.mjs",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "@openzeppelin/upgrades-core": "1.46.0",
+    "lefthook": "2.1.17",
+    "prettier": "3.9.9",
+    "solhint": "6.2.4",
+    "viem": "2.57.3"
+  },
+  "allowScripts": {
+    "lefthook@2.1.17": true,
+    "keccak": false,
+    "secp256k1": false,
+    "fsevents": false
+  }
+}

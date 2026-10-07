@@ -1,0 +1,72 @@
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = ["lib"]
+
+# Compiler: pinned exactly so that every environment produces the same bytecode.
+solc = "0.8.30"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+bytecode_hash = "ipfs"
+# A compiler warning is a failed build.
+deny = "warnings"
+
+# Required by the upgrade-safety validation and the storage-layout check.
+build_info = true
+ast = true
+extra_output = ["storageLayout"]
+
+remappings = [
+    "forge-std/=lib/forge-std/src/",
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",
+]
+
+fs_permissions = [
+    { access = "read", path = "./config" },
+    { access = "read", path = "./test/fixtures" },
+    { access = "read-write", path = "./deployments" },
+]
+
+gas_reports = ["AssertDAO"]
+
+# Every top-level call of a test runs as its own transaction, so that gas snapshots report what a user would pay.
+isolate = true
+
+[fuzz]
+runs = 512
+
+[invariant]
+runs = 64
+depth = 64
+fail_on_revert = true
+
+# Heavier campaign used by the pipeline: FOUNDRY_PROFILE=ci
+[profile.ci.fuzz]
+runs = 5000
+
+[profile.ci.invariant]
+runs = 256
+depth = 128
+fail_on_revert = true
+
+[fmt]
+line_length = 120
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
+quote_style = "double"
+number_underscore = "thousands"
+sort_imports = true
+
+[doc]
+out = "docs"
+title = "ASSERT DAO"
+
+[rpc_endpoints]
+anvil = "http://127.0.0.1:8545"
+base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
+base = "${BASE_RPC_URL}"

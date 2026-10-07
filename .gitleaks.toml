@@ -1,0 +1,8 @@
+title = "ASSERT DAO"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Third-party code and lockfiles"
+paths = ['''^contracts/lib/''', '''^package-lock\.json$''']

@@ -1,0 +1,12 @@
+{
+  "rules": {
+    "use-natspec": "off",
+    "ordering": "off",
+    "func-name-mixedcase": "off",
+    "private-vars-leading-underscore": "off",
+    "one-contract-per-file": "off",
+    "max-states-count": "off",
+    "gas-small-strings": "off",
+    "gas-increment-by-one": "off"
+  }
+}

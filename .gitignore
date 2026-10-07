@@ -1,0 +1,26 @@
+# Dependencies and builds
+node_modules/
+dist/
+coverage/
+release/
+*.log
+.DS_Store
+
+# Secrets live in the environment, never in the repository.
+.env
+.env.*
+!.env.example
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/docs/
+contracts/lcov.info
+contracts/mutation_campaign/
+# Local chain: its deployments and transactions are disposable.
+contracts/deployments/31337.json
+contracts/broadcast/*/31337/
+contracts/broadcast/**/dry-run/
+
+# Monitor
+.monitor/

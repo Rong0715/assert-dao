@@ -1,0 +1,223 @@
+{
+  "storage": [
+    {
+      "label": "_members",
+      "slot": "0",
+      "offset": 0,
+      "type": "t_struct(AddressSet)_storage"
+    },
+    {
+      "label": "_handles",
+      "slot": "2",
+      "offset": 0,
+      "type": "t_mapping(t_address,t_string_storage)"
+    },
+    {
+      "label": "_roundCount",
+      "slot": "3",
+      "offset": 0,
+      "type": "t_uint256"
+    },
+    {
+      "label": "_rounds",
+      "slot": "4",
+      "offset": 0,
+      "type": "t_mapping(t_uint256,t_struct(Round)_storage)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "label": "address",
+      "encoding": "inplace",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_address)dyn_storage": {
+      "label": "address[]",
+      "encoding": "dynamic_array",
+      "numberOfBytes": "32",
+      "base": "t_address"
+    },
+    "t_array(t_bytes32)dyn_storage": {
+      "label": "bytes32[]",
+      "encoding": "dynamic_array",
+      "numberOfBytes": "32",
+      "base": "t_bytes32"
+    },
+    "t_array(t_struct(Proposal)_storage)dyn_storage": {
+      "label": "struct IAssertDAO.Proposal[]",
+      "encoding": "dynamic_array",
+      "numberOfBytes": "32",
+      "base": "t_struct(Proposal)_storage"
+    },
+    "t_array(t_uint8)dyn_storage": {
+      "label": "uint8[]",
+      "encoding": "dynamic_array",
+      "numberOfBytes": "32",
+      "base": "t_uint8"
+    },
+    "t_bool": {
+      "label": "bool",
+      "encoding": "inplace",
+      "numberOfBytes": "1"
+    },
+    "t_bytes32": {
+      "label": "bytes32",
+      "encoding": "inplace",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_address,t_array(t_uint8)dyn_storage)": {
+      "label": "mapping(address => uint8[])",
+      "encoding": "mapping",
+      "numberOfBytes": "32",
+      "key": "t_address",
+      "value": "t_array(t_uint8)dyn_storage"
+    },
+    "t_mapping(t_address,t_string_storage)": {
+      "label": "mapping(address => string)",
+      "encoding": "mapping",
+      "numberOfBytes": "32",
+      "key": "t_address",
+      "value": "t_string_storage"
+    },
+    "t_mapping(t_bytes32,t_uint256)": {
+      "label": "mapping(bytes32 => uint256)",
+      "encoding": "mapping",
+      "numberOfBytes": "32",
+      "key": "t_bytes32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_uint256,t_struct(Round)_storage)": {
+      "label": "mapping(uint256 => struct AssertDAO.Round)",
+      "encoding": "mapping",
+      "numberOfBytes": "32",
+      "key": "t_uint256",
+      "value": "t_struct(Round)_storage"
+    },
+    "t_string_storage": {
+      "label": "string",
+      "encoding": "bytes",
+      "numberOfBytes": "32"
+    },
+    "t_struct(AddressSet)_storage": {
+      "label": "struct EnumerableSet.AddressSet",
+      "encoding": "inplace",
+      "numberOfBytes": "64",
+      "members": [
+        {
+          "label": "_inner",
+          "slot": "0",
+          "offset": 0,
+          "type": "t_struct(Set)_storage"
+        }
+      ]
+    },
+    "t_struct(Proposal)_storage": {
+      "label": "struct IAssertDAO.Proposal",
+      "encoding": "inplace",
+      "numberOfBytes": "96",
+      "members": [
+        {
+          "label": "title",
+          "slot": "0",
+          "offset": 0,
+          "type": "t_string_storage"
+        },
+        {
+          "label": "body",
+          "slot": "1",
+          "offset": 0,
+          "type": "t_string_storage"
+        },
+        {
+          "label": "votes",
+          "slot": "2",
+          "offset": 0,
+          "type": "t_uint256"
+        }
+      ]
+    },
+    "t_struct(Round)_storage": {
+      "label": "struct AssertDAO.Round",
+      "encoding": "inplace",
+      "numberOfBytes": "160",
+      "members": [
+        {
+          "label": "title",
+          "slot": "0",
+          "offset": 0,
+          "type": "t_string_storage"
+        },
+        {
+          "label": "start",
+          "slot": "1",
+          "offset": 0,
+          "type": "t_uint64"
+        },
+        {
+          "label": "end",
+          "slot": "1",
+          "offset": 8,
+          "type": "t_uint64"
+        },
+        {
+          "label": "cancelled",
+          "slot": "1",
+          "offset": 16,
+          "type": "t_bool"
+        },
+        {
+          "label": "proposals",
+          "slot": "2",
+          "offset": 0,
+          "type": "t_array(t_struct(Proposal)_storage)dyn_storage"
+        },
+        {
+          "label": "voters",
+          "slot": "3",
+          "offset": 0,
+          "type": "t_array(t_address)dyn_storage"
+        },
+        {
+          "label": "ballots",
+          "slot": "4",
+          "offset": 0,
+          "type": "t_mapping(t_address,t_array(t_uint8)dyn_storage)"
+        }
+      ]
+    },
+    "t_struct(Set)_storage": {
+      "label": "struct EnumerableSet.Set",
+      "encoding": "inplace",
+      "numberOfBytes": "64",
+      "members": [
+        {
+          "label": "_values",
+          "slot": "0",
+          "offset": 0,
+          "type": "t_array(t_bytes32)dyn_storage"
+        },
+        {
+          "label": "_positions",
+          "slot": "1",
+          "offset": 0,
+          "type": "t_mapping(t_bytes32,t_uint256)"
+        }
+      ]
+    },
+    "t_uint256": {
+      "label": "uint256",
+      "encoding": "inplace",
+      "numberOfBytes": "32"
+    },
+    "t_uint64": {
+      "label": "uint64",
+      "encoding": "inplace",
+      "numberOfBytes": "8"
+    },
+    "t_uint8": {
+      "label": "uint8",
+      "encoding": "inplace",
+      "numberOfBytes": "1"
+    }
+  }
+}
