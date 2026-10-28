@@ -38,11 +38,11 @@
     "prepare": "lefthook install"
   },
   "devDependencies": {
-    "@openzeppelin/upgrades-core": "1.46.0",
-    "lefthook": "2.1.17",
-    "prettier": "3.9.9",
-    "solhint": "6.2.4",
-    "viem": "2.57.3"
+    "@openzeppelin/upgrades-core": "1.47.0",
+    "lefthook": "2.2.2",
+    "prettier": "3.9.10",
+    "solhint": "6.2.5",
+    "viem": "2.57.11"
   },
   "allowScripts": {
     "lefthook@2.1.17": true,
